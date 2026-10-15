@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZeroPlate - Rescue surplus food, feed your neighbourhood</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#06120d;--panel:rgba(14,36,28,.62);--line:rgba(120,255,190,.16);--leaf:#3ddc97;--sun:#ffb547;--hot:#ff6b5a;--txt:#e9f6ee;--mut:#8fb3a1}
+*{box-sizing:border-box;margin:0}html{background:var(--bg);scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;color:var(--txt);line-height:1.6;overflow-x:hidden}
+h1,h2,h3,.brand{font-family:Sora,sans-serif;line-height:1.1}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:-1}
+section{position:relative;padding:110px 6vw 40px;max-width:1280px;margin:auto}
+h2{font-size:clamp(1.9rem,4vw,3rem);margin-bottom:12px}
+.sub{color:var(--mut);max-width:60ch;margin-bottom:34px}
+nav{position:fixed;top:14px;left:50%;transform:translateX(-50%);width:min(1180px,94vw);z-index:50;display:flex;align-items:center;gap:6px;padding:10px 16px;border-radius:18px;background:rgba(8,24,18,.72);backdrop-filter:blur(16px);border:1px solid var(--line)}
+.brand{font-weight:800;font-size:1.2rem;margin-right:auto;color:var(--txt);text-decoration:none}.brand i{font-style:normal;color:var(--leaf)}
+nav a.l{color:var(--mut);text-decoration:none;padding:7px 12px;border-radius:10px;font-size:.93rem;transition:.2s}nav a.l:hover{color:var(--txt);background:rgba(61,220,151,.12)}
+.btn{font:700 .92rem 'DM Sans';border:0;cursor:pointer;padding:11px 20px;border-radius:12px;background:linear-gradient(135deg,var(--leaf),#9af0c4);color:#05150e;transition:transform .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(61,220,151,.35)}.btn.g{background:transparent;color:var(--txt);border:1px solid var(--line)}.btn.s{padding:7px 12px;font-size:.82rem}.btn.hot{background:linear-gradient(135deg,var(--sun),#ffd48a)}
+#menu{display:none;background:none;border:0;color:var(--txt);font-size:1.5rem}
+#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding-top:120px}
+#hero h1{font-size:clamp(2.6rem,7.5vw,6rem);font-weight:800;max-width:11ch;letter-spacing:-.03em}
+#hero h1 span{background:linear-gradient(100deg,var(--leaf),var(--sun));-webkit-background-clip:text;background-clip:text;color:transparent}
+#hero p{max-width:48ch;color:var(--mut);font-size:1.15rem;margin:22px 0 30px}.row{display:flex;gap:12px;flex-wrap:wrap}
+.chips{display:flex;gap:14px;flex-wrap:wrap;margin-top:46px}.chip{padding:14px 20px;border-radius:16px;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);animation:fl 5s ease-in-out infinite}
+.chip:nth-child(2){animation-delay:-1.6s}.chip:nth-child(3){animation-delay:-3.2s}.chip b{display:block;font:800 1.7rem Sora;color:var(--leaf)}.chip small{color:var(--mut)}
+@keyframes fl{50%{transform:translateY(-10px)}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;perspective:1100px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:26px;backdrop-filter:blur(12px);transition:transform .15s,border-color .3s;transform-style:preserve-3d;will-change:transform}
+.card:hover{border-color:rgba(61,220,151,.5)}.card .ic{font-size:2rem;transform:translateZ(40px);display:block;margin-bottom:12px}.card h3{font-size:1.15rem;margin-bottom:8px;transform:translateZ(25px)}.card p{color:var(--mut);font-size:.95rem}
+.flow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}.flow .card{flex:1;min-width:200px}.flow .ar{align-self:center;color:var(--leaf);font-size:1.6rem}
+.rv{opacity:0;transform:translateY(50px) rotateX(10deg);transition:1s cubic-bezier(.2,.8,.2,1)}.rv.in{opacity:1;transform:none}
+#mapwrap{display:grid;grid-template-columns:1.5fr 1fr;gap:20px}#map{height:560px;border-radius:22px;border:1px solid var(--line)}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(150deg) saturate(.6) brightness(.85)}
+#list{max-height:560px;overflow:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px}
+.li{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:3px}.li.urg{border-color:var(--hot);box-shadow:0 0 22px rgba(255,107,90,.18)}
+.li span{color:var(--leaf);font-size:.9rem}.li small{color:var(--mut)}.li .row{margin-top:8px}.tag{color:var(--hot);font-weight:700}
+.empty{color:var(--mut);padding:24px;border:1px dashed var(--line);border-radius:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;perspective:1100px}.stats .card b{display:block;font:800 2.6rem Sora;transform:translateZ(30px)}.stats small{color:var(--mut)}
+#bars{display:flex;align-items:flex-end;gap:14px;height:180px;margin-top:20px;padding:20px;border-radius:22px;background:var(--panel);border:1px solid var(--line)}
+#bars div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:.78rem;color:var(--mut)}#bars i{display:block;width:100%;border-radius:8px 8px 0 0;background:linear-gradient(var(--leaf),var(--sun));min-height:3px;transition:height 1.2s}
+.ai{display:grid;grid-template-columns:1fr 1fr;gap:20px}.ai .card{transform:none!important}
+input,select,textarea{width:100%;font:inherit;color:var(--txt);background:rgba(4,16,11,.7);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:10px}
+input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--leaf);outline-offset:2px}
+.mic{position:relative}.mic button{position:absolute;right:8px;top:8px;border:0;background:rgba(61,220,151,.18);color:var(--txt);border-radius:10px;padding:6px 10px;cursor:pointer}.mic button.on{background:var(--hot);animation:pl 1s infinite}
+@keyframes pl{50%{opacity:.5}}
+#out{white-space:pre-wrap;color:var(--txt)}.m{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:.92rem}.m b{color:var(--leaf)}
+dialog{margin:auto;border:1px solid var(--line);border-radius:24px;background:#0b1f17;color:var(--txt);padding:28px;width:min(480px,94vw);max-height:92vh;overflow:auto}dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(4px)}
+dialog h3{margin-bottom:14px;font-size:1.4rem}.tabs{display:flex;gap:8px;margin-bottom:14px}.tabs .btn{flex:1}label{font-size:.85rem;color:var(--mut)}#pm{height:190px;border-radius:12px;margin-bottom:10px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,120px);background:var(--leaf);color:#05150e;font-weight:700;padding:12px 22px;border-radius:14px;z-index:99;transition:.4s}#toast.show{transform:translate(-50%,0)}
+footer{text-align:center;padding:70px 6vw 40px;color:var(--mut)}footer p{margin:4px}
+@media(max-width:860px){#mapwrap,.ai{grid-template-columns:1fr}#map{height:380px}#menu{display:block}nav .links{display:none;position:absolute;top:62px;left:0;right:0;flex-direction:column;padding:12px;background:rgba(8,24,18,.96);border-radius:18px;border:1px solid var(--line)}nav .links.open{display:flex}.flow .ar{display:none}}
+.links{display:flex;gap:2px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}.rv{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<nav>
+  <a class="brand" href="#home">Zero<i>Plate</i></a>
+  <div class="links" id="links">
+    <a class="l" href="#home">Home</a><a class="l" href="#how">How it works</a><a class="l" href="#map">Live map</a>
+    <a class="l" href="#dash">Dashboard</a><a class="l" href="#ai">AI assistant</a><a class="l" href="#about">About</a>
+  </div>
+  <span id="auth"><button class="btn s" id="signin">Sign in</button></span>
+  <button id="menu" aria-label="Menu">☰</button>
+</nav>
+
+<section id="home">
+  <div id="hero">
+    <h1>Good food deserves a <span>plate</span>, not a bin.</h1>
+    <p>Restaurants, hostels, canteens and bakeries list what is left over. ZeroPlate finds the nearest NGO that can pick it up in time.</p>
+    <div class="row"><button class="btn" id="postBtn">Share surplus food</button><a class="btn g" href="#map" style="text-decoration:none">See food near you</a></div>
+    <div class="chips"><div class="chip"><b data-s="meals">0</b><small>meals rescued</small></div><div class="chip"><b data-s="active">0</b><small>meals waiting for pickup</small></div><div class="chip"><b data-s="co2_kg">0</b><small>kg CO₂ avoided</small></div></div>
+  </div>
+</section>
+
+<section id="how">
+  <h2 class="rv">From leftover to dinner in four steps</h2>
+  <p class="sub rv">No phone tag. Providers post once, and the matching engine does the rest.</p>
+  <div class="flow rv">
+    <div class="card tilt"><span class="ic">🍲</span><h3>Provider lists surplus</h3><p>Meals, quantity, food type, location and pickup deadline.</p></div><span class="ar">➜</span>
+    <div class="card tilt"><span class="ic">🧠</span><h3>AI finds recipients</h3><p>Ranks NGOs by distance, capacity and time left.</p></div><span class="ar">➜</span>
+    <div class="card tilt"><span class="ic">🤝</span><h3>NGO accepts</h3><p>One tap to claim, then pick up before the deadline.</p></div><span class="ar">➜</span>
+    <div class="card tilt"><span class="ic">🌱</span><h3>Impact recorded</h3><p>Meals, waste and people served show on the dashboard.</p></div>
+  </div>
+</section>
+
+<section id="map">
+  <h2 class="rv">Live surplus map</h2>
+  <p class="sub rv">Green dots are food listings, red ones expire within the hour, blue squares are NGOs and shelters.</p>
+  <div id="mapwrap" class="rv"><div id="map"></div><div id="list"></div></div>
+</section>
+
+<section id="dash">
+  <h2 class="rv">Impact dashboard</h2>
+  <p class="sub rv">Updated from completed donations. Estimates use 0.4 kg of food and 2.5 kg CO₂ per meal.</p>
+  <div class="stats rv">
+    <div class="card tilt"><b data-s="meals">0</b><small>Meals rescued</small></div>
+    <div class="card tilt"><b data-s="waste_kg">0</b><small>kg food waste prevented</small></div>
+    <div class="card tilt"><b data-s="donations">0</b><small>Successful donations</small></div>
+    <div class="card tilt"><b data-s="people">0</b><small>People served (est.)</small></div>
+  </div>
+  <div id="bars" class="rv"></div>
+</section>
+
+<section id="ai">
+  <h2 class="rv">AI redistribution assistant</h2>
+  <p class="sub rv">Powered by Gemini. Pick a listing to see who should get it first, or ask anything by typing or speaking.</p>
+  <div class="ai rv">
+    <div class="card">
+      <h3>Who should get this food?</h3><br>
+      <select id="aiSel"><option value="">Select a listing</option></select>
+      <button class="btn" id="aiGo">Recommend recipients</button>
+      <br><br><h3>Ask the assistant</h3><br>
+      <div class="mic"><textarea id="q" rows="3" placeholder="Which listings need pickup first?"></textarea><button type="button" data-mic="q" aria-label="Speak">🎤</button></div>
+      <button class="btn hot" id="aiAsk">Ask</button>
+    </div>
+    <div class="card"><h3>Recommendation</h3><br><div id="out" class="sub">Sign in, then choose a listing or ask a question.</div></div>
+  </div>
+</section>
+
+<section id="about">
+  <h2 class="rv">About ZeroPlate</h2>
+  <p class="sub rv">About a third of all food produced is never eaten, while people nearby go hungry. ZeroPlate closes that gap at neighbourhood scale: providers post leftovers in seconds, NGOs see what is closest and still safe to collect, and every rescued meal is counted. Built for the Zero Food Waste hackathon challenge.</p>
+  <div class="grid rv">
+    <div class="card tilt"><span class="ic">📍</span><h3>Hyperlocal</h3><p>Distance and travel time decide who is offered food first.</p></div>
+    <div class="card tilt"><span class="ic">⏱️</span><h3>Deadline aware</h3><p>Listings under an hour are flagged and expire automatically.</p></div>
+    <div class="card tilt"><span class="ic">🎤</span><h3>Voice friendly</h3><p>Speak your listing notes or questions instead of typing.</p></div>
+  </div>
+</section>
+
+<footer>
+  <p>Developed and deployed by Kaman Das ©2026</p>
+  <p>Made with Love ❤️</p>
+</footer>
+
+<dialog id="authD"><h3 id="authT">Sign in</h3>
+  <div class="tabs"><button class="btn s" id="tIn">Sign in</button><button class="btn s g" id="tUp">Create account</button></div>
+  <div id="upF" hidden>
+    <input id="aName" placeholder="Your name"><input id="aOrg" placeholder="Organisation (restaurant, NGO, hostel...)">
+    <select id="aRole"><option value="provider">I have surplus food (provider)</option><option value="recipient">I collect food (NGO / shelter)</option></select>
+    <input id="aCap" type="number" min="1" placeholder="Meals you can serve per day (NGOs)">
+    <button type="button" class="btn g s" id="aLoc" style="margin-bottom:10px">📍 Use my location</button><small id="aLocT" style="display:block;margin-bottom:10px;color:var(--mut)">Defaults to Bhubaneswar if not set.</small>
+  </div>
+  <input id="aEmail" type="email" placeholder="Email" autocomplete="email"><input id="aPass" type="password" placeholder="Password (6+ characters)" autocomplete="current-password">
+  <div class="row"><button class="btn" id="aGo">Sign in</button><button class="btn g" onclick="this.closest('dialog').close()">Cancel</button></div>
+</dialog>
+
+<dialog id="postD"><h3>Share surplus food</h3>
+  <input id="pTitle" placeholder="What is available? e.g. Veg biryani"><div class="row"><input id="pQty" type="number" min="1" placeholder="Meals" style="flex:1">
+  <select id="pType" style="flex:1"><option>Cooked meals</option><option>Bakery</option><option>Packaged food</option><option>Fruits and veg</option></select></div>
+  <label>Pickup deadline</label><input id="pDead" type="datetime-local">
+  <div class="mic"><textarea id="pNotes" rows="2" placeholder="Notes (allergens, packing)"></textarea><button type="button" data-mic="pNotes" aria-label="Speak">🎤</button></div>
+  <label>Click the map to set the pickup spot</label><div id="pm"></div><input id="pAddr" placeholder="Address or landmark">
+  <div class="row"><button class="btn" id="pGo">Publish listing</button><button class="btn g" onclick="this.closest('dialog').close()">Cancel</button></div>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token=localStorage.getItem('zp_t'),me=null,LS=[],RC=[],loc={lat:20.2961,lng:85.8245};
+async function api(p,b,m){const r=await fetch('/api'+p,{method:m||(b?'POST':'GET'),headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:b?JSON.stringify(b):undefined});let d={};try{d=await r.json()}catch(e){}if(!r.ok)throw new Error(d.error||'Request failed');return d}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200)}
+const fmt=m=>m>=60?Math.floor(m/60)+'h '+m%60+'m':m+' min';
+
+/* ---- 3D background ---- */
+(function(){if(!window.THREE)return;const cv=$('#bg'),r=new THREE.WebGLRenderer({canvas:cv,alpha:true,antialias:true});r.setPixelRatio(Math.min(devicePixelRatio,2));
+const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(60,1,.1,100);cam.position.z=10;const g=new THREE.Group();sc.add(g);
+const mk=(geo,c,o)=>new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:c,wireframe:true,transparent:true,opacity:o}));
+const core=mk(new THREE.IcosahedronGeometry(2.2,1),0x3ddc97,.55),inner=mk(new THREE.OctahedronGeometry(1.2),0xffb547,.8);g.add(core,inner);
+const ring=new THREE.Group();for(let i=0;i<28;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.13,12,12),new THREE.MeshBasicMaterial({color:i%3?0x3ddc97:0xffb547}));const a=i/28*Math.PI*2;m.position.set(Math.cos(a)*3.6,Math.sin(a)*3.6,0);ring.add(m)}ring.rotation.x=1.15;g.add(ring);
+const pg=new THREE.BufferGeometry(),pa=new Float32Array(900);for(let i=0;i<900;i++)pa[i]=(Math.random()-.5)*40;pg.setAttribute('position',new THREE.BufferAttribute(pa,3));
+const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:0x7dffc0,size:.05,transparent:true,opacity:.6}));sc.add(pts);
+let mx=0,my=0,p=0,ts=0;addEventListener('mousemove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5});
+function rs(){r.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}rs();addEventListener('resize',rs);
+const rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+(function an(t){requestAnimationFrame(an);const sp=Math.max(0,Math.min(1,scrollY/Math.max(1,document.body.scrollHeight-innerHeight)));p+=(sp-p)*.06;
+const w=innerWidth>860?1:.5;g.position.x=Math.cos(p*Math.PI*3)*3.2*w;g.position.y=-p*3+1;g.scale.setScalar(w>.9?1-p*.3:.6);
+const s=rm?0:t*.0003;core.rotation.set(s+p*4,s*1.3,0);inner.rotation.set(-s*2,s+p*6,0);ring.rotation.z=s*2+p*5;pts.rotation.y=s*.3+p;
+cam.position.x+=(mx*2-cam.position.x)*.04;cam.position.y+=(-my*2-cam.position.y)*.04;cam.lookAt(0,0,0);r.render(sc,cam)})(0)})();
+
+/* ---- scroll reveal + 3D tilt ---- */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.15});$$('.rv').forEach(e=>io.observe(e));
+document.addEventListener('mousemove',e=>{const c=e.target.closest&&e.target.closest('.tilt');$$('.tilt').forEach(t=>{if(t!==c)t.style.transform=''});if(!c)return;const b=c.getBoundingClientRect();c.style.transform=`rotateY(${((e.clientX-b.left)/b.width-.5)*18}deg) rotateX(${-((e.clientY-b.top)/b.height-.5)*18}deg) scale(1.03)`});
+$('#menu').onclick=()=>$('#links').classList.toggle('open');$$('#links a').forEach(a=>a.onclick=()=>$('#links').classList.remove('open'));
+
+/* ---- map ---- */
+const map=L.map('map').setView([loc.lat,loc.lng],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);const layer=L.layerGroup().addTo(map);
+function drawMap(){layer.clearLayers();LS.forEach(l=>{const u=l.minutes_left<=60;L.circleMarker([l.lat,l.lng],{radius:9,color:u?'#ff6b5a':'#3ddc97',fillOpacity:.8}).addTo(layer).bindPopup(`<b>${esc(l.title)}</b><br>${l.quantity} meals · ${fmt(l.minutes_left)} left`)});
+RC.forEach(r=>L.marker([r.lat,r.lng],{icon:L.divIcon({html:'<div style="width:14px;height:14px;background:#4ea8ff;border-radius:3px;border:2px solid #fff"></div>',iconSize:[14,14]})}).addTo(layer).bindPopup(esc(r.org_name)+'<br>serves ~'+r.capacity+'/day'))}
+function card(l){const u=l.minutes_left<=60;let a='';
+if(me&&me.role==='recipient'&&l.status==='available')a+=`<button class="btn s" onclick="act(${l.id},'claim')">Claim pickup</button>`;
+if(me&&l.status==='claimed'&&(me.id===l.provider_id||me.id===l.claimed_by))a+=`<button class="btn s hot" onclick="act(${l.id},'complete')">Mark picked up</button>`;
+if(me&&me.id===l.provider_id&&l.status==='available')a+=`<button class="btn s g" onclick="aiFor(${l.id})">AI match</button>`;
+return `<div class="li ${u?'urg':''}"><b>${esc(l.title)}</b><span>${l.quantity} meals · ${esc(l.food_type)} ${l.status==='claimed'?'· claimed':''}</span><small>${esc(l.provider)}${l.address?' · '+esc(l.address):''}</small><small>${fmt(l.minutes_left)} left ${u?'<span class="tag">· expiring soon</span>':''}</small>${a?`<div class="row">${a}</div>`:''}</div>`}
+async function loadAll(){try{[LS,RC]=[(await api('/listings')).listings,(await api('/recipients')).recipients]}catch(e){LS=[];RC=[];$('#list').innerHTML=`<div class="empty">${esc(e.message)}</div>`;return}
+$('#list').innerHTML=LS.length?LS.map(card).join(''):'<div class="empty">No food listed right now. Providers can tap "Share surplus food".</div>';drawMap();
+$('#aiSel').innerHTML='<option value="">Select a listing</option>'+LS.filter(l=>l.status==='available').map(l=>`<option value="${l.id}">${esc(l.title)} (${l.quantity} meals)</option>`).join('')}
+async function act(id,w){try{await api(`/listings/${id}/${w}`,{});toast(w==='claim'?'Pickup claimed':'Marked as picked up');loadAll();loadStats()}catch(e){toast(e.message)}}
+async function loadStats(){try{const s=await api('/stats');$$('[data-s]').forEach(e=>cnt(e,s[e.dataset.s]||0));
+const days=[...Array(7)].map((_,i)=>{const d=new Date(Date.now()-(6-i)*864e5);return d.toISOString().slice(0,10)}),mx=Math.max(1,...s.week.map(w=>+w.meals));
+$('#bars').innerHTML=days.map(d=>{const v=+(s.week.find(w=>w.d===d)||{}).meals||0;return `<div>${v}<i style="height:${v/mx*80}%"></i>${d.slice(5)}</div>`}).join('')}catch(e){}}
+function cnt(e,to){const f=+e.textContent||0,t0=performance.now();(function s(t){const k=Math.min(1,(t-t0)/1200);e.textContent=(f+(to-f)*k).toFixed(to%1?1:0);if(k<1)requestAnimationFrame(s)})(t0)}
+
+/* ---- auth ---- */
+let mode='in';function setMode(m){mode=m;$('#upF').hidden=m==='in';$('#authT').textContent=m==='in'?'Sign in':'Create account';$('#aGo').textContent=m==='in'?'Sign in':'Create account';$('#tIn').classList.toggle('g',m!=='in');$('#tUp').classList.toggle('g',m==='in')}
+$('#tIn').onclick=()=>setMode('in');$('#tUp').onclick=()=>setMode('up');$('#signin').onclick=()=>{setMode('in');$('#authD').showModal()};
+$('#aLoc').onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{loc={lat:p.coords.latitude,lng:p.coords.longitude};$('#aLocT').textContent='Location saved ✓'},()=>toast('Location blocked. Using default.')):toast('Location not supported');
+$('#aGo').onclick=async()=>{try{const b={email:$('#aEmail').value,password:$('#aPass').value};if(mode==='up')Object.assign(b,{name:$('#aName').value,org_name:$('#aOrg').value,role:$('#aRole').value,capacity:$('#aCap').value,...loc});
+const d=await api(mode==='in'?'/login':'/register',b);token=d.token;localStorage.setItem('zp_t',token);me=d.user;$('#authD').close();authUI();toast('Welcome, '+me.name);loadAll()}catch(e){toast(e.message)}};
+function authUI(){$('#auth').innerHTML=me?`<span style="color:var(--mut);font-size:.88rem;margin-right:8px">${esc(me.org_name)} · ${me.role}</span><button class="btn s g" id="out2">Sign out</button>`:'<button class="btn s" id="signin2">Sign in</button>';
+if(me)$('#out2').onclick=()=>{token=null;me=null;localStorage.removeItem('zp_t');authUI();loadAll()};else $('#signin2').onclick=()=>{setMode('in');$('#authD').showModal()}}
+async function init(){if(token)try{me=(await api('/me')).user}catch(e){token=null;localStorage.removeItem('zp_t')}authUI();loadAll();loadStats()}
+
+/* ---- post listing ---- */
+let pm,pk,pl={lat:loc.lat,lng:loc.lng};
+$('#postBtn').onclick=()=>{if(!me)return toast('Sign in first'),$('#authD').showModal();if(me.role!=='provider')return toast('Only providers can list surplus food');
+const d=new Date(Date.now()+3*36e5);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());$('#pDead').value=d.toISOString().slice(0,16);$('#postD').showModal();
+pl={lat:me.lat||loc.lat,lng:me.lng||loc.lng};if(!pm){pm=L.map('pm').setView([pl.lat,pl.lng],13);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pm);pm.on('click',e=>{pl={lat:e.latlng.lat,lng:e.latlng.lng};pk.setLatLng(e.latlng)});pk=L.marker([pl.lat,pl.lng]).addTo(pm)}
+pm.setView([pl.lat,pl.lng],13);pk.setLatLng([pl.lat,pl.lng]);setTimeout(()=>pm.invalidateSize(),200)};
+$('#pGo').onclick=async()=>{try{await api('/listings',{title:$('#pTitle').value,quantity:$('#pQty').value,food_type:$('#pType').value,notes:$('#pNotes').value,address:$('#pAddr').value,deadline:new Date($('#pDead').value).toISOString(),...pl});$('#postD').close();toast('Listing published');loadAll();loadStats()}catch(e){toast(e.message)}};
+
+/* ---- AI ---- */
+function aiFor(id){$('#aiSel').value=id;location.hash='#ai';$('#aiGo').click()}
+$('#aiGo').onclick=async()=>{if(!me)return toast('Sign in first');const id=+$('#aiSel').value;if(!id)return toast('Select a listing');$('#out').textContent='Thinking...';
+try{const d=await api('/ai/recommend',{listing_id:id});$('#out').innerHTML=`${d.urgent?'<span class="tag">🔥 Urgent: '+fmt(d.minutes_left)+' left</span><br>':''}${d.matches.map((m,i)=>`<div class="m"><span>${i+1}. ${esc(m.name)}</span><b>${m.score}% · ${m.distance_km} km${m.feasible?'':' · too far'}</b></div>`).join('')||'<div class="m">No recipients registered yet.</div>'}<br>${esc(d.advice)}`}catch(e){$('#out').textContent=e.message}};
+$('#aiAsk').onclick=async()=>{if(!me)return toast('Sign in first');$('#out').textContent='Thinking...';try{$('#out').textContent=(await api('/ai/ask',{question:$('#q').value})).answer}catch(e){$('#out').textContent=e.message}};
+
+/* ---- voice to text ---- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+$$('[data-mic]').forEach(b=>b.onclick=()=>{if(!SR)return toast('Voice input is not supported in this browser. Try Chrome.');const r=new SR(),t=document.getElementById(b.dataset.mic);r.lang='en-IN';r.interimResults=false;b.classList.add('on');
+r.onresult=e=>{t.value=(t.value+' '+e.results[0][0].transcript).trim()};r.onend=()=>b.classList.remove('on');r.onerror=()=>{b.classList.remove('on');toast('Could not hear you. Check mic permission.')};r.start()});
+init();
+</script>
+</body>
+</html>
